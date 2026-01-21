@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Math Question Game</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- Google Font -->
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+
+<style>
+    body {
+        margin: 0;
+        font-family: 'Poppins', sans-serif;
+        background: linear-gradient(0deg, #3388ff, #2a5298);
+        color: #fff;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+    }
+
+    .container {
+        width: 95%;
+        max-width: 420px;
+        background: rgba(255, 255, 255, 0.15);
+        border-radius: 18px;
+        margin: 15px;
+        padding: 20px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+    }
+
+    h1 {
+        text-align: center;
+        margin-bottom: 20px;
+        font-size: 22px;
+    }
+
+    /* LEVELS */
+    .levels {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 10px;
+    }
+
+    .level {
+        background: #2d334d;
+        border-radius: 12px;
+        padding: 12px 0;
+        text-align: center;
+        cursor: pointer;
+        font-weight: 600;
+        transition: 0.2s;
+    }
+
+    .level:hover {
+        background: #3c4370;
+    }
+
+    .locked {
+        background: #1a1f33;
+        color: #777;
+        cursor: not-allowed;
+    }
+
+    /* GAME PLAY */
+    .game {
+        display: none;
+        text-align: center;
+    }
+
+    .title {
+        font-size: 25px;
+        font-weight: 700;
+    }
+    .bz {
+        margin-bottom: 10vh;
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .question {
+        font-size: 35px;
+        font-weight: 300;
+        margin-bottom: 10vh;
+        text-shadow: 0 0 2px rgba(0, 0, 0, 1);
+    }
+
+    input {
+        width: 50%;
+        padding: 10px;
+        border-radius: 10px;
+        border: none;
+        font-size: 20px;
+        text-align: center;
+        outline: none;
+    }
+    input::placeholder {
+    color: var(--ph-color, #aaa);
+    }
+
+    button {
+        margin-top: 15px;
+        margin-bottom: 25px;
+        padding: 10px 25px;
+        border: none;
+        border-radius: 12px;
+        background: #152040;
+        color: #e6e9ff;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: none;
+    }
+
+    button:hover {
+        background: #6bbcff;
+    }
+
+    .back {
+        background: transparent;
+        color: #e6e9ff;
+        font-size: 20px;
+        font-weight: 600;
+        background-color: #152040;
+        padding: 6px;
+        padding-top: 2px;
+        border-radius: 50px;
+        height: 40px;
+        width: 40px;
+        margin: 0 0;
+        
+    }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+    <!-- LEVEL SELECT -->
+    <div id="levelScreen">
+        <h1>Levels</h1>
+        <div class="levels" id="levels"></div>
+    </div>
+
+    <!-- GAME PLAY -->
+    <div id="gameScreen" class="game">
+        <div class="bz">
+        <button class="back" onclick="goBack()">←</button>
+        <div id="title" class="title">Levels</div>
+        <div style="width: 40px;"></div>
+        </div>
+        <div class="question" id="questionText"></div>
+        <input type="number" id="answerInput" placeholder="0">
+        <br>
+        <button id="brg" onclick="checkAnswer()">Answer</button>
+        <br>
+    </div>
+
+</div>
+
+<script>
+   
+    
+    const TOTAL_LEVELS = 100;
+    let unlockedLevels = parseInt(localStorage.getItem("unlockedLevels")) || 1;
+    let currentLevel = 1;
+
+    var jsonText = `[
+    {"none": "Umed", "a": "none"},
+    {"Q":"1 +1 \u003d ?","A":"2"},
+    {"Q":"10 + 10 \u003d ?","A":"20"},
+    {"Q":"100 + 100 \u003d ?","A":"200"},
+    {"Q":"1000 + 1000 \u003d ?","A":"2000"},
+    {"Q":"2 + 2 \u003d ?","A":"4"},
+    {"Q":"20 + 20 \u003d ?","A":"40"},
+    {"Q":"200 + 200 \u003d ?","A":"400"},
+    {"Q":"11 + 1 \u003d ?","A":"12"},
+    {"Q":"101 + 1 \u003d ?","A":"102"},
+    {"Q":"1001 + 1 \u003d ?","A":"1002"},
+    {"Q":"11 + 2 \u003d ?","A":"13"},
+    {"Q":"11 + 20 \u003d ?","A":"31"},
+    {"Q":"111 + 200 \u003d ?","A":"311"},
+    {"Q":"1111 + 2000 \u003d ?","A":"3111"},
+    {"Q":"11 + 22 \u003d ?","A":"33"},
+    {"Q":"111 + 202 \u003d ?","A":"313"},
+    {"Q":"1111 + 2020 \u003d ?","A":"3131"},
+    {"Q":"1 + 9 \u003d ?","A":"10"},
+    {"Q":"11 + 9 \u003d ?","A":"20"},
+    {"Q":"21 + 9 \u003d ?","A":"30"},
+    {"Q":"32 + 8 \u003d ?","A":"40"},
+    {"Q":"43 + 7 \u003d ?","A":"50"},
+    {"Q":"46 + 4 \u003d ?","A":"50"},
+    {"Q":"37 + 3 \u003d ?","A":"40"},
+    {"Q":"28 + 2 \u003d ?","A":"30"},
+    {"Q":"19 + 1 \u003d ?","A":"20"},
+    {"Q":"123 + 321 \u003d ?","A":"444"},
+    {"Q":"11 + 111 \u003d ?","A":"122"},
+    {"Q":"9090 + 909 \u003d ?","A":"9999"},
+    {"Q":"991 + 9 \u003d ?","A":"1000"},
+    {"Q":"111 + 999 \u003d ?","A":"1110"},
+    {"Q":"555 + 445 \u003d ?","A":"1000"},
+    {"Q":"20 + 400 \u003d ?","A":"420"},
+    {"Q":"22222 + 11111 \u003d ?","A":"33333"},
+    {"Q":"1010 + 101 \u003d ?","A":"1111"},
+    {"Q":"9090 + 1010 \u003d ?","A":"10100"},
+    {"Q":"654 + 456 \u003d ?","A":"1110"},
+    {"Q":"234 + 432 \u003d ?","A":"666"},
+    {"Q":"246 + 642 \u003d ?","A":"888"},
+    {"Q":"135 + 531 \u003d ?","A":"666"},
+    {"Q":"66 + 66 \u003d ?","A":"132"},
+    {"Q":"33 + 99 \u003d ?","A":"132"},
+    {"Q":"99 + 66 \u003d ?","A":"165"},
+    {"Q":"99 + 99 \u003d ?","A":"198"},
+    {"Q":"999 + 999 \u003d ?","A":"1998"},
+    {"Q":"25000 + 1750 \u003d ?","A":"26750"},
+    {"Q":"140000 + 65000 \u003d ?","A":"205000"},
+    {"Q":"777000 + 777 \u003d ?","A":"777777"},
+    {"Q":"777 + 3333 \u003d ?","A":"4110"},
+    {"Q":"950 + 1050 \u003d ?","A":"2000"}
+    ]`;
+    
+    /* =============================
+       QUESTIONS (EDIT MANUALLY)
+       ============================= */
+     // Convert JSON text to JavaScript object
+    const questions = JSON.parse(jsonText);
+
+    /* CREATE LEVEL BUTTONS */
+    const levelsDiv = document.getElementById("levels");
+    function buildLevels() {
+    levelsDiv.innerHTML = "";
+
+    for (let i = 1; i <= TOTAL_LEVELS; i++) {
+        const div = document.createElement("div");
+        div.textContent = i;
+        div.className = "level";
+
+        if (i > unlockedLevels) {
+            div.classList.add("locked");
+        } else {
+            div.onclick = () => startLevel(i);
+        }
+
+        levelsDiv.appendChild(div);
+    }
+}
+buildLevels();
+
+   
+        function startLevel(level) {
+    currentLevel = level;
+    document.getElementById("levelScreen").style.display = "none";
+    document.getElementById("gameScreen").style.display = "block";
+    document.getElementById("answerInput").value = "";
+    document.getElementById("title").textContent = "Level " + currentLevel;
+
+    const questionEl = document.getElementById("questionText");
+
+    if (questions[level]) {
+        questionEl.textContent = questions[level].Q;
+        questionEl.style.color = "#ffffff"; // normal color
+        questionEl.style.fontWeight = "300";
+        document.getElementById("answerInput").disabled = false;
+        document.getElementById("brg").disabled = false;
+    } else {
+        questionEl.textContent = "Unavailable";
+        questionEl.style.color = "#ff0040"; // red color
+        questionEl.style.fontWeight = "600";
+        questionEl.style.textShadow = "0 0 2px rgba(0, 0, 0, 1) , 0 0 8px rgba(0, 0, 0, 1)";
+        document.getElementById("answerInput").disabled = true;
+        document.getElementById("brg").disabled = true;
+    }
+}
+
+      function checkAnswer() {
+    const input = document.getElementById("answerInput").value;
+    const correct = questions[currentLevel]?.A;
+    if (input == "") {
+        document.getElementById("answerInput").value = "0";
+    }
+    if (input == correct) {
+        document.getElementById("questionText").textContent = "Correct!";
+        document.getElementById("questionText").style.color = "#00ff66";
+        
+        if (currentLevel === unlockedLevels && unlockedLevels < TOTAL_LEVELS) {
+            unlockedLevels++;
+            localStorage.setItem("unlockedLevels", unlockedLevels);
+        }
+        setTimeout(() => {
+        goBack();       // return to level screen
+        buildLevels();  // refresh levels
+        currentLevel++;
+        startLevel(currentLevel);
+        }, 1500);
+    } else {
+        document.getElementById("questionText").textContent = "Incorrect";
+        document.getElementById("questionText").style.color = "#ff0040";
+        
+        setTimeout(() => {
+        goBack();       // return to level screen
+        buildLevels();  // refresh levels
+        }, 1500);
+   }
+  }
+
+    function goBack() {
+        document.getElementById("gameScreen").style.display = "none";
+        document.getElementById("levelScreen").style.display = "block";
+    }
+</script>
+
+</body>
+</html>
